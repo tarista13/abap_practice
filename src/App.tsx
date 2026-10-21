@@ -1,13 +1,32 @@
 import { useEffect, useState } from "react";
 import { Playground } from "./components/Playground";
-import { ChallengeView } from "./components/ChallengeView";
-import { challenges } from "./challenges";
+import { LearnPage } from "./components/LearnPage";
+import { ChallengesPage } from "./components/ChallengesPage";
+import { lessons } from "./tutorials";
 import { warmUp } from "./engine/client";
-import { load, save } from "./storage";
 
-type Tab = { kind: "playground" } | { kind: "challenge"; id: string };
+type Route =
+  | { page: "learn"; id: string }
+  | { page: "playground" }
+  | { page: "challenges"; id?: string };
 
-const solvedKey = (id: string) => `challenge.${id}.solved`;
+// hash routes: #/learn/<lesson>, #/playground, #/challenges/<challenge>
+function parseRoute(hash: string): Route {
+  const [page, id] = hash.replace(/^#\/?/, "").split("/");
+  if (page === "playground") return { page };
+  if (page === "challenges") return { page, id };
+  return { page: "learn", id: id ?? lessons[0].id };
+}
+
+function useRoute(): Route {
+  const [route, setRoute] = useState(() => parseRoute(window.location.hash));
+  useEffect(() => {
+    const onChange = () => setRoute(parseRoute(window.location.hash));
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  return route;
+}
 
 function usePrefersDark(): boolean {
   const query = "(prefers-color-scheme: dark)";
@@ -22,44 +41,32 @@ function usePrefersDark(): boolean {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>({ kind: "playground" });
-  const [solved, setSolved] = useState(() => new Set(challenges.filter(c => load(solvedKey(c.id))).map(c => c.id)));
+  const route = useRoute();
   const dark = usePrefersDark();
 
   // start loading the transpiler before the first Run
   useEffect(() => warmUp(), []);
 
-  const challenge = tab.kind === "challenge" ? challenges.find(c => c.id === tab.id) : undefined;
-
-  const markSolved = (id: string) => {
-    save(solvedKey(id), "true");
-    setSolved(prev => new Set(prev).add(id));
-  };
+  const tab = (page: Route["page"], label: string) => (
+    <a href={`#/${page}`} className={route.page === page ? "active" : ""} aria-current={route.page === page ? "page" : undefined}>
+      {label}
+    </a>
+  );
 
   return (
     <div className="app">
       <header>
         <h1>ABAP Practice <span className="sub">for SAP TM</span></h1>
         <nav>
-          <button className={tab.kind === "playground" ? "active" : ""} onClick={() => setTab({ kind: "playground" })}>
-            Playground
-          </button>
-          {challenges.map(c => (
-            <button
-              key={c.id}
-              className={tab.kind === "challenge" && tab.id === c.id ? "active" : ""}
-              onClick={() => setTab({ kind: "challenge", id: c.id })}
-            >
-              Challenge: {c.title}{solved.has(c.id) ? " ✓" : ""}
-            </button>
-          ))}
+          {tab("learn", "Learn")}
+          {tab("playground", "Playground")}
+          {tab("challenges", "Challenges")}
         </nav>
       </header>
       <main>
-        {tab.kind === "playground" && <Playground dark={dark} />}
-        {challenge && (
-          <ChallengeView key={challenge.id} challenge={challenge} dark={dark} onSolved={() => markSolved(challenge.id)} />
-        )}
+        {route.page === "learn" && <LearnPage lessonId={route.id} dark={dark} />}
+        {route.page === "playground" && <Playground dark={dark} />}
+        {route.page === "challenges" && <ChallengesPage challengeId={route.id} dark={dark} />}
       </main>
     </div>
   );

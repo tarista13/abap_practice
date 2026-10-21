@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor, { loader, type OnMount } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
@@ -14,16 +14,22 @@ interface Props {
   diagnostics: Diagnostic[];
   onRun: () => void;
   dark: boolean;
+  /** grow with the content instead of filling the parent (for editors embedded in text) */
+  autoHeight?: boolean;
 }
 
-export function AbapEditor({ value, onChange, diagnostics, onRun, dark }: Props) {
+export function AbapEditor({ value, onChange, diagnostics, onRun, dark, autoHeight }: Props) {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const onRunRef = useRef(onRun);
   onRunRef.current = onRun;
+  const [height, setHeight] = useState(() => value.split("\n").length * 19 + 16);
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current());
+    if (autoHeight) {
+      editor.onDidContentSizeChange(e => setHeight(e.contentHeight));
+    }
   };
 
   useEffect(() => {
@@ -41,6 +47,7 @@ export function AbapEditor({ value, onChange, diagnostics, onRun, dark }: Props)
 
   return (
     <Editor
+      height={autoHeight ? height : "100%"}
       language="abap"
       theme={dark ? "vs-dark" : "vs"}
       value={value}
@@ -53,6 +60,13 @@ export function AbapEditor({ value, onChange, diagnostics, onRun, dark }: Props)
         tabSize: 2,
         automaticLayout: true,
         fixedOverflowWidgets: true,
+        ...(autoHeight && {
+          scrollbar: { alwaysConsumeMouseWheel: false, vertical: "hidden" },
+          padding: { top: 8, bottom: 8 },
+          lineNumbersMinChars: 3,
+          overviewRulerLanes: 0,
+          renderLineHighlightOnlyWhenFocus: true,
+        }),
       }}
     />
   );

@@ -4,6 +4,7 @@ A browser-based app for learning ABAP with SAP Transportation Management (TM) ex
 ABAP code is compiled to JavaScript with the open-source [abaplint transpiler](https://github.com/abaplint/transpiler)
 and runs entirely in the browser — no SAP system needed.
 
+- **Learn**: lessons on ABAP basics with runnable examples and auto-checked exercises.
 - **Playground**: write and run ABAP programs; `WRITE` output, syntax errors and runtime errors are shown.
 - **Challenges**: implement a class and check it against hidden ABAP Unit tests.
 
@@ -12,7 +13,7 @@ and runs entirely in the browser — no SAP system needed.
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm run check    # verify samples run and every challenge's solution passes
+npm run check    # verify all samples, lessons and challenges (add -- --verbose to see lesson output)
 npm run build    # static site in dist/, host it anywhere
 ```
 
@@ -26,6 +27,7 @@ npm run build    # static site in dist/, host it anywhere
 | Mock SAP TM tables and their rows | `src/engine/tm-db.ts` |
 | In-memory SQLite database (sql.js) behind `SELECT` | `src/engine/database.ts` |
 | Code editor (Monaco, the VS Code editor) | `src/components/AbapEditor.tsx` |
+| Lessons (Markdown) and their parser | `src/tutorials/` |
 | Playground examples | `src/samples/` |
 | Challenges | `src/challenges/` |
 
@@ -37,6 +39,31 @@ and stops point to their header via `PARENT_KEY = DB_KEY`. The Tables button in 
 shows all fields and rows. `SELECT`, `SELECT SINGLE`, `COUNT`/`SUM`, `JOIN`, `ORDER BY` and
 `FOR ALL ENTRIES` work. To add a table or rows, edit `tmTables` in `src/engine/tm-db.ts`
 (challenge tests depend on the rows, so run `npm run check` afterwards).
+
+## Writing a lesson
+
+Lessons are Markdown files in `src/tutorials/lessons/`, ordered by their number prefix
+(`07-classes.md` becomes lesson 7 with the id `classes`). The first `# Heading` is the title.
+ABAP code fences become editors:
+
+````markdown
+```abap
+WRITE / 'A runnable example'.
+```
+
+```abap exercise
+WRITE / 'Starter code the learner edits'.
+--- solution ---
+WRITE / 'Hello'.
+--- expected ---
+Hello
+```
+````
+
+An exercise is solved when the learner's output matches the expected output (trailing spaces
+ignored). `npm run check` runs every example and makes sure each exercise's solution prints the
+expected output. Prefer string templates (`|{ lv_x }|`) over `WRITE lv_x` for numbers: this
+runtime always formats `WRITE` decimals with a comma.
 
 ## Adding a challenge
 

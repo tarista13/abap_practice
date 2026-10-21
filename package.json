@@ -17,6 +17,7 @@
     "@abaplint/transpiler": "^2.14.10",
     "@monaco-editor/react": "^4.7.0",
     "buffer": "^6.0.3",
+    "marked": "^18.1.1",
     "monaco-editor": "^0.57.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
