@@ -55,18 +55,129 @@ WRITE: / 'Stop 1: PLANT_GRR',
 
 > **Try breaking things.** Delete a period in one of the examples above and click Run. The red underline and the message tell you exactly where the problem is. Reading these messages is a skill worth practicing.
 
-## Exercise
+## Practice
 
-Make the program below print the three lines shown under **Show expected output**. Click **Run** to check your answer.
+First, read the program below **without running it**. What do you think it prints? Type your guess, then check it.
 
-```abap exercise
-WRITE / 'Freight order 6100000104'.
+```abap predict
+WRITE: / 'Stop 1', / 'Stop 2'.
+* WRITE / 'Stop 3'.
+WRITE / 'Stop 4'. " WRITE / 'Stop 5'.
+WRITE / '" Stop 6'.
+--- explain ---
+The chain prints `Stop 1` and `Stop 2`. The `*` line is a comment, and so is everything after the `"` on the `Stop 4` line. But the `"` inside `'" Stop 6'` is part of a text literal, so it's printed, not treated as a comment.
+```
+
+Now write a program yourself, from an empty editor. Each step adds a little. Click **Run & check** when you think a step is done; the next step appears when the output is right.
+
+```abap steps
+" Write your program here
+--- step ---
+You're printing a shipping label for a truck driver. Start with the first line: print `Freight order 6100000104`.
+--- expected ---
+Freight order 6100000104
+--- requires ---
+WRITE :: Use a WRITE statement.
+--- hint ---
+Text goes between single quotes, and every statement ends with a period.
+--- hint ---
+`WRITE 'Freight order ...'.`
 --- solution ---
-WRITE / 'Freight order 6100000104'.
-WRITE / 'From: PLANT_ATH'.
-WRITE / 'To: DC_MSP'.
+WRITE 'Freight order 6100000104'.
+--- step ---
+Add two more lines below it: `From: PLANT_ATH` and `To: DC_MSP`. Each must be on its own line.
 --- expected ---
 Freight order 6100000104
 From: PLANT_ATH
 To: DC_MSP
+--- hint ---
+Without `/`, a WRITE continues on the same line. Put a `/` right after `WRITE` to start a new line.
+--- solution ---
+WRITE / 'Freight order 6100000104'.
+WRITE / 'From: PLANT_ATH'.
+WRITE / 'To: DC_MSP'.
+--- step ---
+That's a lot of `WRITE` keywords. Rewrite the three statements as **one chained statement**. The output stays the same.
+--- expected ---
+Freight order 6100000104
+From: PLANT_ATH
+To: DC_MSP
+--- requires ---
+WRITE\s*: :: Use a chain: WRITE followed by a colon.
+!WRITE\s+/ :: There's still a separate "WRITE /" statement. Use one WRITE: with the parts separated by commas.
+--- hint ---
+A chain is the keyword, a colon, then the parts separated by commas: `WRITE: / 'a', / 'b'.`
+--- hint ---
+Only the last part ends with a period. The others end with a comma.
+--- solution ---
+WRITE: / 'Freight order 6100000104',
+       / 'From: PLANT_ATH',
+       / 'To: DC_MSP'.
+--- step ---
+Finally, document your program: add a **full-line comment** at the very top that says what the program does, and put a comment at the end of the `To:` line saying it's the final stop. The output must not change.
+--- expected ---
+Freight order 6100000104
+From: PLANT_ATH
+To: DC_MSP
+--- requires ---
+^\* :: Add a full-line comment: a line that starts with * in the very first column.
+DC_MSP'\.\s*" :: Add a " comment after the To: part (after its period).
+--- hint ---
+A full-line comment starts with `*` in column 1, with no spaces in front of it.
+--- hint ---
+An end-of-line comment starts with `"`. Put it after the period that ends the chain.
+--- solution ---
+* Prints the shipping label for the driver
+WRITE: / 'Freight order 6100000104',
+       / 'From: PLANT_ATH',
+       / 'To: DC_MSP'. " final stop
+```
+
+One more, a little more independent. This time there are fewer hints in the instructions; use what you learned above.
+
+```abap steps
+" Write your program here
+--- step ---
+A dispatcher needs a quick checklist for loading a truck. Print the title `Loading checklist` and, under it, a line of ten `=` characters.
+--- expected ---
+Loading checklist
+==========
+--- hint ---
+Two WRITE statements (or one chain), each starting a new line with `/`.
+--- solution ---
+WRITE / 'Loading checklist'.
+WRITE / '=========='.
+--- step ---
+Add three checklist items below the line, each starting with `[ ]`: `Check seal`, `Count pallets`, `Sign CMR document`.
+--- expected ---
+Loading checklist
+==========
+[ ] Check seal
+[ ] Count pallets
+[ ] Sign CMR document
+--- hint ---
+`[ ]` is just text, so it goes inside the quotes: `'[ ] Check seal'`.
+--- solution ---
+WRITE / 'Loading checklist'.
+WRITE / '=========='.
+WRITE / '[ ] Check seal'.
+WRITE / '[ ] Count pallets'.
+WRITE / '[ ] Sign CMR document'.
+--- step ---
+The seal was checked. Change the first item to `[X] Check seal`, and turn the `Count pallets` line into a comment so it no longer prints (the pallets were counted at the warehouse). Keep the line in the code.
+--- expected ---
+Loading checklist
+==========
+[X] Check seal
+[ ] Sign CMR document
+--- requires ---
+^\s*(\*|")[^\n]*Count pallets :: Keep the "Count pallets" line in your code, but turn it into a comment.
+--- hint ---
+Put a `*` at the very start of that line, or a `"` in front of `WRITE`.
+--- solution ---
+WRITE / 'Loading checklist'.
+WRITE / '=========='.
+WRITE / '[X] Check seal'.
+* WRITE / '[ ] Count pallets'.
+WRITE / '[ ] Sign CMR document'.
 ```

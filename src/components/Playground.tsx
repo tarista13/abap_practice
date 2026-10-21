@@ -20,13 +20,13 @@ export function Playground({ dark }: { dark: boolean }) {
     save(STORAGE_KEY, value);
   };
 
-  const run = async () => {
+  const run = async (source: string = code) => {
     if (running) return;
     setRunning(true);
     setShowTables(false);
     // a program is a PROG object whose name must match its REPORT statement
-    const name = /^\s*REPORT\s+(\w+)/im.exec(code)?.[1]?.toLowerCase() ?? "zplayground";
-    setResult(await runAbap([{ filename: `${name}.prog.abap`, contents: code }]));
+    const name = /^\s*REPORT\s+(\w+)/im.exec(source)?.[1]?.toLowerCase() ?? "zplayground";
+    setResult(await runAbap([{ filename: `${name}.prog.abap`, contents: source }]));
     setRunning(false);
   };
 
@@ -50,7 +50,7 @@ export function Playground({ dark }: { dark: boolean }) {
           </button>
           <span className="spacer" />
           <span className="hint">Ctrl+Enter</span>
-          <button className="primary" onClick={run} disabled={running}>▶ Run</button>
+          <button className="primary" onClick={() => run()} disabled={running}>▶ Run</button>
         </div>
         <div className="editor">
           <AbapEditor value={code} onChange={update} diagnostics={result?.diagnostics ?? []} onRun={run} dark={dark} />

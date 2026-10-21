@@ -145,11 +145,191 @@ LOOP AT lt_items INTO ls_item.
 ENDLOOP.
 ```
 
-## Exercise
+## Practice
 
-Add up the weight of all items and print the total. Then print how many items weigh more than 400 KG.
+What does this print? Pay attention to `sy-tabix` after sorting.
 
-```abap exercise
+```abap predict
+DATA lt_weights TYPE STANDARD TABLE OF i WITH EMPTY KEY.
+DATA lv_weight TYPE i.
+
+lt_weights = VALUE #( ( 300 ) ( 100 ) ( 200 ) ).
+APPEND 50 TO lt_weights.
+SORT lt_weights.
+
+LOOP AT lt_weights INTO lv_weight WHERE table_line > 80.
+  WRITE / |{ sy-tabix }: { lv_weight }|.
+ENDLOOP.
+--- explain ---
+After `APPEND` the table is 300, 100, 200, 50, and `SORT` puts it in ascending order: 50, 100, 200, 300. The `WHERE` skips 50, but `sy-tabix` is still the row's position in the table, so the first printed row is number 2, not 1. (`table_line` means "the whole row", for tables whose rows are simple values like these.)
+```
+
+Build a route from scratch: a structure type, a table, and a few ways of reading it.
+
+```abap steps
+" Write your program here
+--- step ---
+Define a structure type `ty_stop` with an integer `seq` and a string `location`, and an internal table `lt_stops` of it. Fill it with three stops: 1 `PLANT_GRR`, 2 `HUB_DTW`, 3 `DC_CHI`. Then print how many rows the table has: `3 stops`.
+--- expected ---
+3 stops
+--- requires ---
+BEGIN\s+OF\s+ty_stop :: Define the structure type with TYPES: BEGIN OF ty_stop ... END OF ty_stop.
+lines\( :: Count the rows with lines( ), don't type the 3 in.
+--- hint ---
+`VALUE #( ( seq = 1 location = '...' ) ( ... ) )` fills the whole table at once.
+--- hint ---
+`|{ lines( lt_stops ) } stops|`
+--- solution ---
+TYPES: BEGIN OF ty_stop,
+         seq      TYPE i,
+         location TYPE string,
+       END OF ty_stop.
+
+DATA lt_stops TYPE STANDARD TABLE OF ty_stop WITH EMPTY KEY.
+
+lt_stops = VALUE #(
+  ( seq = 1 location = 'PLANT_GRR' )
+  ( seq = 2 location = 'HUB_DTW' )
+  ( seq = 3 location = 'DC_CHI' ) ).
+
+WRITE / |{ lines( lt_stops ) } stops|.
+--- step ---
+Below that, print each stop as `<seq>: <location>`.
+--- expected ---
+3 stops
+1: PLANT_GRR
+2: HUB_DTW
+3: DC_CHI
+--- requires ---
+LOOP\s+AT :: Use LOOP AT.
+--- hint ---
+You need a work area variable of type `ty_stop` to `LOOP AT ... INTO`.
+--- solution ---
+TYPES: BEGIN OF ty_stop,
+         seq      TYPE i,
+         location TYPE string,
+       END OF ty_stop.
+
+DATA lt_stops TYPE STANDARD TABLE OF ty_stop WITH EMPTY KEY.
+DATA ls_stop TYPE ty_stop.
+
+lt_stops = VALUE #(
+  ( seq = 1 location = 'PLANT_GRR' )
+  ( seq = 2 location = 'HUB_DTW' )
+  ( seq = 3 location = 'DC_CHI' ) ).
+
+WRITE / |{ lines( lt_stops ) } stops|.
+LOOP AT lt_stops INTO ls_stop.
+  WRITE / |{ ls_stop-seq }: { ls_stop-location }|.
+ENDLOOP.
+--- step ---
+After the list, look up the stop at `HUB_DTW` **by its location** and print `HUB_DTW is stop 2`, taking the 2 from the row you found.
+--- expected ---
+3 stops
+1: PLANT_GRR
+2: HUB_DTW
+3: DC_CHI
+HUB_DTW is stop 2
+--- requires ---
+READ\s+TABLE[\s\S]*WITH\s+KEY :: Use READ TABLE ... WITH KEY location = ...
+--- hint ---
+`READ TABLE lt_stops INTO ls_stop WITH KEY location = 'HUB_DTW'.`
+--- hint ---
+Check `sy-subrc = 0` before using the row; that's how you know it was found.
+--- solution ---
+TYPES: BEGIN OF ty_stop,
+         seq      TYPE i,
+         location TYPE string,
+       END OF ty_stop.
+
+DATA lt_stops TYPE STANDARD TABLE OF ty_stop WITH EMPTY KEY.
+DATA ls_stop TYPE ty_stop.
+
+lt_stops = VALUE #(
+  ( seq = 1 location = 'PLANT_GRR' )
+  ( seq = 2 location = 'HUB_DTW' )
+  ( seq = 3 location = 'DC_CHI' ) ).
+
+WRITE / |{ lines( lt_stops ) } stops|.
+LOOP AT lt_stops INTO ls_stop.
+  WRITE / |{ ls_stop-seq }: { ls_stop-location }|.
+ENDLOOP.
+
+READ TABLE lt_stops INTO ls_stop WITH KEY location = 'HUB_DTW'.
+IF sy-subrc = 0.
+  WRITE / |{ ls_stop-location } is stop { ls_stop-seq }|.
+ENDIF.
+--- step ---
+The route gets a fourth stop: 4 `DC_MSP`. Add it with `APPEND` (not in the `VALUE`), and list the stops in **reverse** order, last stop first. The count and the lookup should still work.
+--- expected ---
+4 stops
+4: DC_MSP
+3: DC_CHI
+2: HUB_DTW
+1: PLANT_GRR
+HUB_DTW is stop 2
+--- requires ---
+\bAPPEND\b :: Add the new stop with APPEND.
+\bSORT\b :: Use SORT to reverse the order.
+--- hint ---
+Fill a work area with the new stop's fields, then `APPEND ls_stop TO lt_stops.`
+--- hint ---
+`SORT lt_stops BY seq DESCENDING.` Where does it need to go?
+--- solution ---
+TYPES: BEGIN OF ty_stop,
+         seq      TYPE i,
+         location TYPE string,
+       END OF ty_stop.
+
+DATA lt_stops TYPE STANDARD TABLE OF ty_stop WITH EMPTY KEY.
+DATA ls_stop TYPE ty_stop.
+
+lt_stops = VALUE #(
+  ( seq = 1 location = 'PLANT_GRR' )
+  ( seq = 2 location = 'HUB_DTW' )
+  ( seq = 3 location = 'DC_CHI' ) ).
+
+ls_stop-seq = 4.
+ls_stop-location = 'DC_MSP'.
+APPEND ls_stop TO lt_stops.
+SORT lt_stops BY seq DESCENDING.
+
+WRITE / |{ lines( lt_stops ) } stops|.
+LOOP AT lt_stops INTO ls_stop.
+  WRITE / |{ ls_stop-seq }: { ls_stop-location }|.
+ENDLOOP.
+
+READ TABLE lt_stops INTO ls_stop WITH KEY location = 'HUB_DTW'.
+IF sy-subrc = 0.
+  WRITE / |{ ls_stop-location } is stop { ls_stop-seq }|.
+ENDIF.
+```
+
+Now analyze the items of a freight order. The table is filled for you; the logic is yours.
+
+```abap steps
+TYPES: BEGIN OF ty_item,
+         descr  TYPE string,
+         weight TYPE i,
+       END OF ty_item.
+
+DATA lt_items TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY.
+
+lt_items = VALUE #(
+  ( descr = 'Office chairs'   weight = 950 )
+  ( descr = 'Desks'           weight = 500 )
+  ( descr = 'Lamps'           weight = 300 )
+  ( descr = 'Filing cabinets' weight = 800 )
+  ( descr = 'Monitor arms'    weight = 120 ) ).
+--- step ---
+Print the total weight of all items: `Total: 2670 KG`.
+--- expected ---
+Total: 2670 KG
+--- requires ---
+LOOP\s+AT :: Add the weights up in a LOOP AT.
+--- hint ---
+Keep a running total in a variable: add each item's weight to it inside the loop.
+--- solution ---
 TYPES: BEGIN OF ty_item,
          descr  TYPE string,
          weight TYPE i,
@@ -158,19 +338,26 @@ TYPES: BEGIN OF ty_item,
 DATA lt_items TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY.
 DATA ls_item TYPE ty_item.
 DATA lv_total TYPE i.
-DATA lv_heavy TYPE i.
 
 lt_items = VALUE #(
-  ( descr = 'Office chairs'     weight = 950 )
-  ( descr = 'Desks'             weight = 500 )
-  ( descr = 'Lamps'             weight = 300 )
-  ( descr = 'Filing cabinets'   weight = 800 )
-  ( descr = 'Monitor arms'      weight = 120 ) ).
+  ( descr = 'Office chairs'   weight = 950 )
+  ( descr = 'Desks'           weight = 500 )
+  ( descr = 'Lamps'           weight = 300 )
+  ( descr = 'Filing cabinets' weight = 800 )
+  ( descr = 'Monitor arms'    weight = 120 ) ).
 
-" loop over lt_items here
+LOOP AT lt_items INTO ls_item.
+  lv_total = lv_total + ls_item-weight.
+ENDLOOP.
 
-WRITE / |Total weight: { lv_total } KG|.
-WRITE / |Heavy items: { lv_heavy }|.
+WRITE / |Total: { lv_total } KG|.
+--- step ---
+Also count the items heavier than 400 KG and print `Heavy items: 3` as a second line.
+--- expected ---
+Total: 2670 KG
+Heavy items: 3
+--- hint ---
+A second counter variable, increased inside an `IF` in the same loop.
 --- solution ---
 TYPES: BEGIN OF ty_item,
          descr  TYPE string,
@@ -183,11 +370,11 @@ DATA lv_total TYPE i.
 DATA lv_heavy TYPE i.
 
 lt_items = VALUE #(
-  ( descr = 'Office chairs'     weight = 950 )
-  ( descr = 'Desks'             weight = 500 )
-  ( descr = 'Lamps'             weight = 300 )
-  ( descr = 'Filing cabinets'   weight = 800 )
-  ( descr = 'Monitor arms'      weight = 120 ) ).
+  ( descr = 'Office chairs'   weight = 950 )
+  ( descr = 'Desks'           weight = 500 )
+  ( descr = 'Lamps'           weight = 300 )
+  ( descr = 'Filing cabinets' weight = 800 )
+  ( descr = 'Monitor arms'    weight = 120 ) ).
 
 LOOP AT lt_items INTO ls_item.
   lv_total = lv_total + ls_item-weight.
@@ -196,9 +383,91 @@ LOOP AT lt_items INTO ls_item.
   ENDIF.
 ENDLOOP.
 
-WRITE / |Total weight: { lv_total } KG|.
+WRITE / |Total: { lv_total } KG|.
 WRITE / |Heavy items: { lv_heavy }|.
+--- step ---
+Print the description of the heaviest item as a third line: `Heaviest: Office chairs`. There's more than one way to do this.
 --- expected ---
-Total weight: 2670 KG
+Total: 2670 KG
 Heavy items: 3
+Heaviest: Office chairs
+--- hint ---
+One way: sort the table by weight, heaviest first, and read row 1.
+--- hint ---
+Another way: in the loop, remember the item whenever its weight is bigger than the biggest one so far.
+--- solution ---
+TYPES: BEGIN OF ty_item,
+         descr  TYPE string,
+         weight TYPE i,
+       END OF ty_item.
+
+DATA lt_items TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY.
+DATA ls_item TYPE ty_item.
+DATA lv_total TYPE i.
+DATA lv_heavy TYPE i.
+
+lt_items = VALUE #(
+  ( descr = 'Office chairs'   weight = 950 )
+  ( descr = 'Desks'           weight = 500 )
+  ( descr = 'Lamps'           weight = 300 )
+  ( descr = 'Filing cabinets' weight = 800 )
+  ( descr = 'Monitor arms'    weight = 120 ) ).
+
+LOOP AT lt_items INTO ls_item.
+  lv_total = lv_total + ls_item-weight.
+  IF ls_item-weight > 400.
+    lv_heavy = lv_heavy + 1.
+  ENDIF.
+ENDLOOP.
+
+SORT lt_items BY weight DESCENDING.
+
+WRITE / |Total: { lv_total } KG|.
+WRITE / |Heavy items: { lv_heavy }|.
+WRITE / |Heaviest: { lt_items[ 1 ]-descr }|.
+--- step ---
+Every item gets 5 KG of packaging. Add it to each row **in the table**, before the other calculations, using a field symbol.
+--- expected ---
+Total: 2695 KG
+Heavy items: 3
+Heaviest: Office chairs
+--- requires ---
+ASSIGNING :: Change the rows in place with LOOP AT ... ASSIGNING <field symbol>.
+--- hint ---
+`FIELD-SYMBOLS <ls_item> TYPE ty_item.` then `LOOP AT lt_items ASSIGNING <ls_item>.`
+--- solution ---
+TYPES: BEGIN OF ty_item,
+         descr  TYPE string,
+         weight TYPE i,
+       END OF ty_item.
+
+DATA lt_items TYPE STANDARD TABLE OF ty_item WITH EMPTY KEY.
+DATA ls_item TYPE ty_item.
+DATA lv_total TYPE i.
+DATA lv_heavy TYPE i.
+FIELD-SYMBOLS <ls_item> TYPE ty_item.
+
+lt_items = VALUE #(
+  ( descr = 'Office chairs'   weight = 950 )
+  ( descr = 'Desks'           weight = 500 )
+  ( descr = 'Lamps'           weight = 300 )
+  ( descr = 'Filing cabinets' weight = 800 )
+  ( descr = 'Monitor arms'    weight = 120 ) ).
+
+LOOP AT lt_items ASSIGNING <ls_item>.
+  <ls_item>-weight = <ls_item>-weight + 5.
+ENDLOOP.
+
+LOOP AT lt_items INTO ls_item.
+  lv_total = lv_total + ls_item-weight.
+  IF ls_item-weight > 400.
+    lv_heavy = lv_heavy + 1.
+  ENDIF.
+ENDLOOP.
+
+SORT lt_items BY weight DESCENDING.
+
+WRITE / |Total: { lv_total } KG|.
+WRITE / |Heavy items: { lv_heavy }|.
+WRITE / |Heaviest: { lt_items[ 1 ]-descr }|.
 ```

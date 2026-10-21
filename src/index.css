@@ -226,6 +226,64 @@ ul.tests li:last-child { border-bottom: none; }
 .runner-expected { padding: 10px 14px; }
 .runner-expected h3 { font-size: 14px; margin: 0 0 6px; }
 .runner-verdict { padding: 8px 14px; border-top: 1px solid var(--border); font-weight: 600; }
+.runner-verdict ul { margin: 6px 0 0; font-weight: 400; color: var(--text); }
+.runner-label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.runner.predict { border-color: var(--good); border-width: 2px; }
+.runner.predict .runner-label { background: var(--good); }
+.sidebar .count { color: var(--muted); font-size: 12px; }
+
+/* step-by-step exercises */
+.progress { display: inline-flex; align-items: center; gap: 4px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+.progress .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--accent-text); opacity: 0.6; }
+.progress .dot.done { background: var(--accent-text); opacity: 1; }
+.progress .dot.current { opacity: 1; }
+.progress .dot:last-of-type { margin-right: 6px; }
+.step-list { list-style: none; margin: 0; padding: 10px 14px 4px; }
+.step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+.step-mark {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.step.done .step-mark { background: var(--good); }
+.step.done .step-text { color: var(--muted); }
+.step-text { font-size: 14px; }
+.step-text p:last-child { margin-bottom: 0; }
+.more-steps { padding: 0 14px 8px 46px; }
+.hints { padding: 0 14px 10px; display: grid; gap: 6px; }
+.hint { background: var(--code-bg); border-radius: 6px; padding: 6px 10px; font-size: 14px; display: flex; gap: 6px; }
+.hint-text p { margin: 0; }
+.runner-editor { border-top: 1px solid var(--border); }
+
+table.diff { border-collapse: collapse; margin-top: 8px; font-weight: 400; font-size: 13px; width: 100%; }
+table.diff th { text-align: left; color: var(--muted); font-weight: 600; padding: 2px 8px; }
+table.diff td { padding: 2px 8px; border-top: 1px solid var(--border); white-space: pre; color: var(--text); }
+table.diff code { background: none; }
+table.diff tr.differs td { background: color-mix(in srgb, var(--bad) 12%, transparent); }
+table.diff tr.differs .mark { color: var(--bad); }
+table.diff tr.same .mark { color: var(--good); }
+
+.predict-guess { padding: 10px 14px 0; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+.predict-guess label { font-size: 14px; font-weight: 600; }
+.predict-guess textarea {
+  font: 13px "Cascadia Code", Consolas, monospace;
+  color: var(--text);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+.predict-guess textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.explain { margin-top: 10px; font-weight: 400; font-size: 14px; color: var(--text); }
+.explain p:last-child { margin-bottom: 0; }
 
 .pager { display: flex; justify-content: space-between; gap: 16px; max-width: 820px; margin: 0 auto; padding: 8px 24px 40px; }
 .pager a { color: var(--accent); text-decoration: none; font-weight: 600; }

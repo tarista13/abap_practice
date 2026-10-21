@@ -121,21 +121,179 @@ SELECT SUM( gro_wei_val ) FROM /scmtms/d_torrot
 WRITE / |{ lv_count } freight orders, { lv_total } KG in total.|.
 ```
 
-## Exercise
+## Practice
 
-Print the locations of all stops of freight order **6100000104**, in stop order (`SEQ_NUM`).
+What does this print? You can look at the data under **Playground → Tables**.
 
-```abap exercise
+```abap predict
+DATA lv_count TYPE i.
 DATA ls_order TYPE /scmtms/d_torrot.
-DATA lt_stops TYPE STANDARD TABLE OF /scmtms/d_torstp WITH EMPTY KEY.
-DATA ls_stop TYPE /scmtms/d_torstp.
 
-" 1. read the order 6100000104 into ls_order
-" 2. read its stops into lt_stops, sorted by seq_num
+SELECT COUNT(*) FROM /scmtms/d_torrot
+  WHERE tspid = 'CARRIER_A'
+  INTO @lv_count.
+WRITE / |{ lv_count }|.
 
-LOOP AT lt_stops INTO ls_stop.
-  WRITE / |{ ls_stop-seq_num }: { ls_stop-log_locid }|.
+SELECT SINGLE * FROM /scmtms/d_torrot
+  WHERE tor_id = '6100000999'
+  INTO @ls_order.
+WRITE / |{ sy-subrc }|.
+WRITE / |[{ ls_order-tspid }]|.
+--- explain ---
+CARRIER_A has three orders, including the canceled one, since the `WHERE` doesn't filter by status. Order `6100000999` doesn't exist, so `SELECT SINGLE` sets `sy-subrc` to `4` and leaves `ls_order` empty, so the carrier prints as nothing between the brackets.
+```
+
+Build a small carrier report against the TM tables.
+
+```abap steps
+" Write your program here
+--- step ---
+Read all freight orders (`TOR_CAT = 'TO'`) of `CARRIER_B` from `/SCMTMS/D_TORROT` into an internal table and print how many there are: `CARRIER_B: 2 orders`.
+--- expected ---
+CARRIER_B: 2 orders
+--- requires ---
+SELECT[\s\S]*INTO\s+TABLE :: Read the orders with SELECT ... INTO TABLE.
+--- hint ---
+Declare the table as `TYPE STANDARD TABLE OF /scmtms/d_torrot WITH EMPTY KEY`.
+--- hint ---
+Both `sy-dbcnt` and `lines( )` give you the count.
+--- solution ---
+DATA lt_orders TYPE STANDARD TABLE OF /scmtms/d_torrot WITH EMPTY KEY.
+
+SELECT * FROM /scmtms/d_torrot
+  WHERE tspid = 'CARRIER_B'
+    AND tor_cat = 'TO'
+  INTO TABLE @lt_orders.
+
+WRITE / |CARRIER_B: { lines( lt_orders ) } orders|.
+--- step ---
+List the orders under that line, sorted by order number, as `<TOR_ID> status <LIFECYCLE>`.
+--- expected ---
+CARRIER_B: 2 orders
+6100000104 status 05
+6100000105 status 02
+--- requires ---
+ORDER\s+BY :: Let the database sort the rows with ORDER BY.
+--- hint ---
+`ORDER BY tor_id` goes before `INTO TABLE`.
+--- solution ---
+DATA lt_orders TYPE STANDARD TABLE OF /scmtms/d_torrot WITH EMPTY KEY.
+DATA ls_order TYPE /scmtms/d_torrot.
+
+SELECT * FROM /scmtms/d_torrot
+  WHERE tspid = 'CARRIER_B'
+    AND tor_cat = 'TO'
+  ORDER BY tor_id
+  INTO TABLE @lt_orders.
+
+WRITE / |CARRIER_B: { lines( lt_orders ) } orders|.
+LOOP AT lt_orders INTO ls_order.
+  WRITE / |{ ls_order-tor_id } status { ls_order-lifecycle }|.
 ENDLOOP.
+--- step ---
+Add a line with their total gross weight, calculated **by the database**: `Total: 2850.000 KG`.
+--- expected ---
+CARRIER_B: 2 orders
+6100000104 status 05
+6100000105 status 02
+Total: 2850.000 KG
+--- requires ---
+SUM\s*\( :: Use SELECT SUM( ... ) so the database adds the weights up.
+--- hint ---
+Type the result variable like the weight field: `TYPE /scmtms/d_torrot-gro_wei_val`.
+--- hint ---
+`SELECT SUM( gro_wei_val ) FROM ... WHERE ... INTO @lv_total.`
+--- solution ---
+DATA lt_orders TYPE STANDARD TABLE OF /scmtms/d_torrot WITH EMPTY KEY.
+DATA ls_order TYPE /scmtms/d_torrot.
+DATA lv_total TYPE /scmtms/d_torrot-gro_wei_val.
+
+SELECT * FROM /scmtms/d_torrot
+  WHERE tspid = 'CARRIER_B'
+    AND tor_cat = 'TO'
+  ORDER BY tor_id
+  INTO TABLE @lt_orders.
+
+SELECT SUM( gro_wei_val ) FROM /scmtms/d_torrot
+  WHERE tspid = 'CARRIER_B'
+    AND tor_cat = 'TO'
+  INTO @lv_total.
+
+WRITE / |CARRIER_B: { lines( lt_orders ) } orders|.
+LOOP AT lt_orders INTO ls_order.
+  WRITE / |{ ls_order-tor_id } status { ls_order-lifecycle }|.
+ENDLOOP.
+WRITE / |Total: { lv_total } KG|.
+--- step ---
+Show each order's number of stops at the end of its line: `6100000104 status 05, 4 stops`.
+--- expected ---
+CARRIER_B: 2 orders
+6100000104 status 05, 4 stops
+6100000105 status 02, 2 stops
+Total: 2850.000 KG
+--- requires ---
+parent_key :: Find each order's stops through PARENT_KEY.
+--- hint ---
+Inside the loop, count the rows in `/SCMTMS/D_TORSTP` that belong to the current order.
+--- hint ---
+Stops point to the order's `DB_KEY`, not its `TOR_ID`: `WHERE parent_key = @ls_order-db_key`.
+--- solution ---
+DATA lt_orders TYPE STANDARD TABLE OF /scmtms/d_torrot WITH EMPTY KEY.
+DATA ls_order TYPE /scmtms/d_torrot.
+DATA lv_total TYPE /scmtms/d_torrot-gro_wei_val.
+DATA lv_stops TYPE i.
+
+SELECT * FROM /scmtms/d_torrot
+  WHERE tspid = 'CARRIER_B'
+    AND tor_cat = 'TO'
+  ORDER BY tor_id
+  INTO TABLE @lt_orders.
+
+SELECT SUM( gro_wei_val ) FROM /scmtms/d_torrot
+  WHERE tspid = 'CARRIER_B'
+    AND tor_cat = 'TO'
+  INTO @lv_total.
+
+WRITE / |CARRIER_B: { lines( lt_orders ) } orders|.
+LOOP AT lt_orders INTO ls_order.
+  SELECT COUNT(*) FROM /scmtms/d_torstp
+    WHERE parent_key = @ls_order-db_key
+    INTO @lv_stops.
+  WRITE / |{ ls_order-tor_id } status { ls_order-lifecycle }, { lv_stops } stops|.
+ENDLOOP.
+WRITE / |Total: { lv_total } KG|.
+```
+
+One order in detail. This one has the least guidance of all; check the tables if you're unsure about a field.
+
+```abap steps
+" Write your program here
+--- step ---
+Look up freight order `6100000104` and print its carrier: `Carrier: CARRIER_B`.
+--- expected ---
+Carrier: CARRIER_B
+--- requires ---
+SELECT\s+SINGLE :: Use SELECT SINGLE for a lookup by order number.
+--- hint ---
+The carrier is in the `TSPID` field.
+--- solution ---
+DATA ls_order TYPE /scmtms/d_torrot.
+
+SELECT SINGLE * FROM /scmtms/d_torrot
+  WHERE tor_id = '6100000104'
+  INTO @ls_order.
+
+WRITE / |Carrier: { ls_order-tspid }|.
+--- step ---
+Print its stops in stop order, as `<SEQ_NUM>: <LOG_LOCID>`.
+--- expected ---
+Carrier: CARRIER_B
+1: PLANT_ATH
+2: HUB_DTW
+3: DC_CHI
+4: DC_MSP
+--- hint ---
+Same idea as the stop count above, but read the rows with `ORDER BY seq_num` and loop over them.
 --- solution ---
 DATA ls_order TYPE /scmtms/d_torrot.
 DATA lt_stops TYPE STANDARD TABLE OF /scmtms/d_torstp WITH EMPTY KEY.
@@ -150,12 +308,49 @@ SELECT * FROM /scmtms/d_torstp
   ORDER BY seq_num
   INTO TABLE @lt_stops.
 
+WRITE / |Carrier: { ls_order-tspid }|.
 LOOP AT lt_stops INTO ls_stop.
   WRITE / |{ ls_stop-seq_num }: { ls_stop-log_locid }|.
 ENDLOOP.
+--- step ---
+Finally, print the order's product items (`ITEM_CAT = 'PRD'`) as `Item <ITEM_ID>: <ITEM_DESCR>`.
 --- expected ---
+Carrier: CARRIER_B
 1: PLANT_ATH
 2: HUB_DTW
 3: DC_CHI
 4: DC_MSP
+Item 10: Conference tables
+--- requires ---
+/scmtms/d_torite :: Read the items from /SCMTMS/D_TORITE.
+--- hint ---
+Items are linked to the order the same way stops are.
+--- solution ---
+DATA ls_order TYPE /scmtms/d_torrot.
+DATA lt_stops TYPE STANDARD TABLE OF /scmtms/d_torstp WITH EMPTY KEY.
+DATA ls_stop TYPE /scmtms/d_torstp.
+DATA lt_items TYPE STANDARD TABLE OF /scmtms/d_torite WITH EMPTY KEY.
+DATA ls_item TYPE /scmtms/d_torite.
+
+SELECT SINGLE * FROM /scmtms/d_torrot
+  WHERE tor_id = '6100000104'
+  INTO @ls_order.
+
+SELECT * FROM /scmtms/d_torstp
+  WHERE parent_key = @ls_order-db_key
+  ORDER BY seq_num
+  INTO TABLE @lt_stops.
+
+SELECT * FROM /scmtms/d_torite
+  WHERE parent_key = @ls_order-db_key
+    AND item_cat = 'PRD'
+  INTO TABLE @lt_items.
+
+WRITE / |Carrier: { ls_order-tspid }|.
+LOOP AT lt_stops INTO ls_stop.
+  WRITE / |{ ls_stop-seq_num }: { ls_stop-log_locid }|.
+ENDLOOP.
+LOOP AT lt_items INTO ls_item.
+  WRITE / |Item { ls_item-item_id }: { ls_item-item_descr }|.
+ENDLOOP.
 ```

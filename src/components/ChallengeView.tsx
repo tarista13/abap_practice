@@ -44,11 +44,11 @@ export function ChallengeView({ challenge, dark, onSolved }: Props) {
     save(storageKey, value);
   };
 
-  const run = async () => {
+  const run = async (source: string = code) => {
     if (running) return;
     setRunning(true);
     const r = await runAbap(
-      [{ filename: `${challenge.className}.clas.abap`, contents: code }],
+      [{ filename: `${challenge.className}.clas.abap`, contents: source }],
       [{ filename: `${challenge.className}.clas.testclasses.abap`, contents: challenge.tests }],
     );
     setResult(r);
@@ -85,7 +85,7 @@ export function ChallengeView({ challenge, dark, onSolved }: Props) {
           <button onClick={() => replaceWith(challenge.solution, "Replace your code with the sample solution?")}>Show solution</button>
           <span className="spacer" />
           <span className="hint">Ctrl+Enter</span>
-          <button className="primary" onClick={run} disabled={running}>▶ Run tests</button>
+          <button className="primary" onClick={() => run()} disabled={running}>▶ Run tests</button>
         </div>
         <div className="editor">
           <AbapEditor value={code} onChange={update} diagnostics={result?.diagnostics ?? []} onRun={run} dark={dark} />

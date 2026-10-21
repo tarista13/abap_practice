@@ -12,13 +12,17 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   diagnostics: Diagnostic[];
-  onRun: () => void;
+  /** Ctrl+Enter; receives the current editor text */
+  onRun: (code: string) => void;
   dark: boolean;
   /** grow with the content instead of filling the parent (for editors embedded in text) */
   autoHeight?: boolean;
+  /** smallest height in pixels when growing with the content */
+  minHeight?: number;
+  readOnly?: boolean;
 }
 
-export function AbapEditor({ value, onChange, diagnostics, onRun, dark, autoHeight }: Props) {
+export function AbapEditor({ value, onChange, diagnostics, onRun, dark, autoHeight, minHeight = 0, readOnly }: Props) {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const onRunRef = useRef(onRun);
   onRunRef.current = onRun;
@@ -26,7 +30,15 @@ export function AbapEditor({ value, onChange, diagnostics, onRun, dark, autoHeig
 
   const handleMount: OnMount = (editor) => {
     editorRef.current = editor;
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current());
+    // an action is bound to this editor; addCommand would be global, so with several editors
+    // on a page Ctrl+Enter would always run the last one
+    editor.addAction({
+      id: "abap.run",
+      label: "Run",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+      // pass the editor's text: React state may not have caught up with the last keystroke yet
+      run: ed => onRunRef.current(ed.getValue()),
+    });
     if (autoHeight) {
       editor.onDidContentSizeChange(e => setHeight(e.contentHeight));
     }
@@ -47,7 +59,7 @@ export function AbapEditor({ value, onChange, diagnostics, onRun, dark, autoHeig
 
   return (
     <Editor
-      height={autoHeight ? height : "100%"}
+      height={autoHeight ? Math.max(height, minHeight) : "100%"}
       language="abap"
       theme={dark ? "vs-dark" : "vs"}
       value={value}
@@ -60,6 +72,8 @@ export function AbapEditor({ value, onChange, diagnostics, onRun, dark, autoHeig
         tabSize: 2,
         automaticLayout: true,
         fixedOverflowWidgets: true,
+        readOnly,
+        domReadOnly: readOnly,
         ...(autoHeight && {
           scrollbar: { alwaysConsumeMouseWheel: false, vertical: "hidden" },
           padding: { top: 8, bottom: 8 },

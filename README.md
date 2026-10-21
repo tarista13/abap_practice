@@ -44,26 +44,49 @@ shows all fields and rows. `SELECT`, `SELECT SINGLE`, `COUNT`/`SUM`, `JOIN`, `OR
 
 Lessons are Markdown files in `src/tutorials/lessons/`, ordered by their number prefix
 (`07-classes.md` becomes lesson 7 with the id `classes`). The first `# Heading` is the title.
-ABAP code fences become editors:
+ABAP code fences become interactive blocks:
 
 ````markdown
 ```abap
 WRITE / 'A runnable example'.
 ```
 
-```abap exercise
-WRITE / 'Starter code the learner edits'.
---- solution ---
-WRITE / 'Hello'.
+```abap predict
+WRITE / 'The learner guesses what this prints, then checks.'.
+--- explain ---
+Optional Markdown shown after checking.
+```
+
+```abap steps
+" starter code (may be empty)
+--- step ---
+Instruction in Markdown: print `Hello`.
 --- expected ---
 Hello
+--- requires ---
+WRITE :: Use a WRITE statement.
+!'Hi' :: A requirement starting with ! must NOT match.
+--- hint ---
+Hints are revealed one at a time.
+--- hint ---
+Add as many as you like.
+--- solution ---
+WRITE / 'Hello'.
+--- step ---
+The next step builds on the same code...
 ```
 ````
 
-An exercise is solved when the learner's output matches the expected output (trailing spaces
-ignored). `npm run check` runs every example and makes sure each exercise's solution prints the
-expected output. Prefer string templates (`|{ lv_x }|`) over `WRITE lv_x` for numbers: this
-runtime always formats `WRITE` decimals with a comma.
+A step is passed when the program's output matches `expected` (trailing spaces ignored) and the
+code matches every `requires` regex (case-insensitive, `regex :: message` per line). Use
+requirements to make sure the learner practices the concept, e.g. that they used `LOOP AT`
+instead of typing the expected text into a `WRITE`. The step's `solution` is the whole program
+after that step; the learner can reveal it after using all hints or two wrong attempts.
+
+`npm run check` runs every example and predict block, and for each step checks that the solution
+passes, that the previous step's code does not already pass (so every step asks for something
+new), and that the step has a hint. Prefer string templates (`|{ lv_x }|`) over `WRITE lv_x` for
+numbers: this runtime always formats `WRITE` decimals with a comma.
 
 ## Adding a challenge
 
