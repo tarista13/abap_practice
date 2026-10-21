@@ -1,0 +1,35 @@
+{
+  "name": "abap_practice",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "check": "node scripts/check-content.ts"
+  },
+  "dependencies": {
+    "@abaplint/core": "^2.120.85",
+    "@abaplint/database-sqlite": "^2.13.83",
+    "@abaplint/runtime": "^2.14.10",
+    "@abaplint/transpiler": "^2.14.10",
+    "@monaco-editor/react": "^4.7.0",
+    "buffer": "^6.0.3",
+    "monaco-editor": "^0.57.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sql.js": "^1.15.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/sql.js": "^1.4.11",
+    "@vitejs/plugin-react": "^6.1.2",
+    "oxlint": "^1.88.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4"
+  }
+}
